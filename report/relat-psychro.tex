@@ -1,0 +1,296 @@
+\documentclass[a4paper,12pt,brazil]{article}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage{babel}
+\usepackage[pdftex]{graphicx}
+\usepackage[footnotesize,bf,hang]{caption2}
+\usepackage{amsmath}
+\usepackage{times}
+
+
+\setlength{\abovecaptionskip}{0pt}
+\setlength{\belowcaptionskip}{0pt}
+
+\setlength{\captionmargin}{1.5cm}
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MARGENS 
+%\setlength{\textheight}{24.5cm}
+%\textwidth=16cm
+%\voffset-2cm
+%\hoffset-1cm
+%\setlength{\headheight}{0.15cm}
+
+\setlength{\oddsidemargin}{0.5cm}
+\setlength{\evensidemargin}{-0.54cm}
+\setlength{\textwidth}{17cm}
+
+\setlength{\topmargin}{-0.5cm}
+\setlength{\headheight}{0.15cm}
+\setlength{\headsep}{0.90cm}
+\setlength{\textheight}{24.7cm}
+\setlength{\footskip}{9mm}
+
+
+\usepackage{fancyhdr}
+
+
+\pagestyle{fancy}
+
+\lhead{\texttt{libpsychro}}
+\rhead[\sl\small\leftmark]{\rm\thepage}
+\lfoot{}
+\cfoot{}
+\rfoot{}
+
+
+
+
+\newcommand{\vm}{\bar{v}}
+\newcommand{\psychro}{\texttt{libpsychro}}
+
+\linespread{1.1}
+
+
+\title{Introdução a psicrometria e à biblioteca \texttt{libpsychro}}
+\author{Paulo José Saiz Jabardo}
+\date{São Paulo, 27 de janeiro de 2004}
+
+
+\begin{document}	
+\thispagestyle{empty}
+\maketitle
+
+\abstract{Este relatório mostra o equacionamento utilizado na implementação da biblioteca \texttt{libpsychro} para cálculo de propriedades termodinâmicas do ar úmido. A biblioteca foi escrita em C++ de modo a facilitar extensões e modificações futuras.}
+
+\tableofcontents
+%\pagebreak
+\section{Introdução}
+
+Uma necessidade constante no centro de metrologia de fluidos é o cálculo da densidade (ou massa específica) do ar úmido, principalmente nos laboratórios de gás e anemometria. Uma formulação simplificada utilizando um modelo de gás perfeito para o ar e o vapor é, na maioria das aplicações, razoável. No entanto, em aplicações metrológicas como a calibração de anemêmotros ou medidores de vazão de gás, os pequenos erros resultantes deste modelo simples podem não ser aceitáveis. Principalmente quando as incertezas são extremamente baixas (da ordem de $0,2\%$). 
+
+Tradicionalmente o laboratório utilizou as correlações dadas em \cite{giacomo.1982}. Estas correlações são simples (sempre funções simples e explícitas) e são utilizadas em diversos centros metrológicos ao redor do mundo (como por exemplo o PTB na Alemanha). 
+
+Existem duas dificuldades com a metodologia de \cite{giacomo.1982}. A primeira é a faixa limitada. Estas correlações estão limitadas para pressões entre $60\:kPa$ e $110\:kPa$, o que é baixo se for utilizado ar na pressão. As correlações também estão limitadas para temperaturas entre $15^oC$ e $27^0C$. A temperatura no laboratório de anemometria do Centro de Metrologia de Fluidos (CMF) do IPT pode facilmente ultrapassar esta faixa em um dia um pouco mais quente.
+
+A segunda dificuldade com a formulação de Giacomo\cite{giacomo.1982} é a limitação das formas de entrada da umidade: a umidade pode ser especificada utilizando a umidade relativa ou a temperatura de ponto de orvalho. É muito comum no CMF a medição da temperatura de bulbo úmido (uma estimativa da temperatura de saturação adiabática). Esta medida não pode ser utilizada na formulação de Giacomo. Além disto, existe o fato de que no Laboratório de Higrometria do CMF é necessária a determinação de parâmetros outros que a densidade. A biblioteca \texttt{libpsychro} utiliza o equacionamento da ASHRAE\cite{ashrae.1996,hyland.1983,hyland.1983b} para o cálculo de propriedades termodinâmicas do ar úmido.
+
+O objetivo deste trabalho é sanar estas dificuldades e testar uma nova estrutura computacional utilizando conceitos de orientação a objeto para a implementação de propriedades termodinâmicas de fluidos.
+
+\section{Psicrometria}
+
+A psicrometria estuda a mistura de vapor de água e ar. Este tipo de mistura é muito importante em diversas áreas como refrigeração e ar-condicionado, conforto térmico, metrologia, etc. A abordagem mais comum é tratar esta mistura como uma mistura de gases perfeitos. Esta abordagem geralmente fornece resultados excelentes e é de fácil implementação. Qualquer livro de termodinâmica como \cite{wylen.1995} ou \cite{moran.2000} possui uma excelente introdução ao tema. A publicação da ASHRAE\cite{ashrae.1996} mostra o equacionamento para a determinação de propriedades termodinâmicas do ar úmido. 
+
+Esta mesma publicação \cite{ashrae.1996} também  apresenta o equacionamento para gás real, que é baseado no trabalho de Hyland e Wexler \cite{hyland.1983,hyland.1983b}. Este equacionamento será apresentado neste trabalho. 
+
+\subsection{Composição do ar}
+
+O ar atmosférico é uma mistura de diversos gases sendo o nitrogênio e o oxigênio os componentes mais importantes. A composição do ar pode variar de ambiente a ambiente e com a altitude mas de uma maneira geral, próximo ao nível do ar e em um ambiente ventilado, a composição do ar seco (sem nenhum vapor de água) é relativamente constante. A esta mistura de gases pode-se associar uma substância equivalente (com mesmas propriedades termodinâmicas) para se facilitar a formulação do problema. A composição do ar padrão pode ser encontrada em \cite{giacomo.1982}. Este ``ar equivalente'' padrão tem uma massa molecular de 
+\begin{equation}
+M_a = 28,9635 \frac{kg}{kmol}
+\label{eq:Ma}
+\end{equation}
+
+A partir deste momento o ar seco será tratado como uma substância pura e deve-se tomar cuidado para que o equacionamento a seguir seja empregado em um gás com composição muito distinta. 
+
+\subsection{Equação de estado do ar úmido}
+O ar úmido é uma mistura ar seco + vapor de água. A equação de estado da ASHRAE para o ar úmido é uma equação virial \cite{ashrae.1996}:
+\begin{equation}
+Z = \frac{p\vm}{RT} = 1 + \frac{B_m}{\vm} + \frac{C_m}{\vm^2}
+\label{eq:Z}
+\end{equation}
+Nesta equação $Z$ é o fator de compressibilidade, $p$ é a pressão, $\vm$ é o volume molar, $R = 8314,41\:J/(kmol\cdot K)$ é a constante universal dos gases, $T$ é a temperatura absoluta, $B_m$ é o segundo coeficiente virial e $C_m$ é o terceiro coeficiente virial. 
+
+O primeiro aspecto a se notar é que esta equação é implícita (veja $\vm$ nos dois lados da equação) mas de fácil solução:
+\begin{equation}
+\frac{p\vm^{n+1}}{RT} = 1 + \frac{B_m}{\vm^n} + \frac{C_m}{(\vm^n)^2}
+\label{eq:iterZ}
+\end{equation}
+Repete-se esta operação até que $|\vm^{n+1} - \vm^n| < \varepsilon$, onde $\varepsilon$ é o erro admissível. Este procedimento geralmente converge em poucas iterações ($\sim 5$) se a estimativa inicial for boa, o que geralmente é se $\vm^0 = RT/P$ (volume molar do gás perfeito).
+
+O problema agora é determinar os coeficientes viriais $B_m$ e $C_m$. Estes coeficientes dependem da temperatura e composição e são dados pelas seguintes equações:
+\begin{equation}
+B_m = x_a^2 B_{aa} + 2x_a x_vB_{av} + x_v^2 B_{vv}
+\label{eq:Bm}
+\end{equation}
+e
+
+
+\begin{equation}
+C_m = x_a^3 C_{aaa} + 3x_a^2 x_vC_{aav} + 3x_a x_v^2C_{avv}+ x_v^3 C_{vvv}
+\label{eq:Cm}
+\end{equation}
+
+Nestas equações $x_a = 1 - x_v$ é a fração molar do ar, $x_v$ é a fração molar do vapor e $B_{ii}$ e $C_{iii}$ são os coeficientes viriais. Expressões estes coeficientes podem ser encontrados nas referências \cite{ashrae.1996,hyland.1983b} e são apenas função da temperatura. 
+
+\subsection{Parâmetros para a definição da umidade}
+Para se especificar o estado da mistura ar-vapor são necessários três parâmetros. Geralmente são empregados a temperatura, a pressão e a composição. É raro medir-se diretamente a composição do ar úmido, medindo-se ao invés algum outro parâmetro como a temperatura do ponto de orvalho ou a temperatura de bulbo úmido. São comuns, ainda, outros parâmetros para a definição da umidade do ar como por exemplo o teor de umidade (ou umidade absoluta) e umidade relativa. Adiante estes parâmetros serão brevemente descritos.
+
+Água pode existir em uma ou mais fases em equilíbrio (vapor-líquido por exemplo). Adicionando ou retirando energia, moléculas podem mudar de fase. No equilíbrio o que ocorre realmente é um equilíbrio dinâmico onde o número de moléculas indo para uma das fases é igual ao número de moléculas indo para a outra fase. Quando se tem um equilíbrio de fases com  temperatura e pressão uniforme de uma substância pura, se diz que o sistema está saturado e o potencial químico de ambas as fases é o mesmo. O mesmo pode acontecer com uma mistura ar-vapor. Neste caso, no entanto o problema é mais complexo e outros fatores como a compressibilidade da fase líquida ou sólida e a solubilidade desta fase não gasosa pode influir na saturação do ar úmido. Para um gás perfeito, a saturação do ar úmido ocorre quando a pressão parcial do vapor corresponde à pressão de saturação do vapor saturado puro. Assim,
+\[
+x_{v,\text{saturação}} = x_{vs} = \frac{P_{sv}(T)}{P}
+\]
+Onde T é a temperatura da mistura e P é a sua pressão. Esta aproximação é bastante razoável para a maioria das aplicações. No caso real esta equação deve ser corrigida. Esta correção vai depender da solubilidade e compressibilidade da fase não gasosa assim como os coeficientes viriais do ar úmido. Desta maneira, segundo \cite{ashrae.1996,hyland.1983b} a fração molar na saturação vale:
+\begin{equation}
+x_{vs} = f(T,P) \cdot \frac{P_{sv}(T)}{P}
+\label{eq:saturacao}
+\end{equation}
+Nesta equação, $f$ é o \emph{enhancement factor} e depende da temperatura e pressão \emph{na saturação}.
+
+\subsection{Fração molar de vapor}
+A fração molar de vapor é muito utilizada em diversos cálculos na psicrometria mas é raramente utilizado para caracterizar a umidade. A fração molar de vapor, geralmente denotada por $x_v$ vale:
+\begin{equation}
+x_v = \frac{n_v}{n_a + n_v}
+\label{eq:xv}
+\end{equation}
+Nesta equação, $n_v$ é o número de moles de vapor e $n_a$ é o número de molas do ar.
+
+
+\subsection{Teor de umidade ou umidade absoluta}
+A umidade absoluta é a quantidade de vapor de água por unidade de massa de ar seco, geralmente representado pela letra grega $\omega$. Esta grandeza é muito utilizada nos cálculos psicrométricos.
+\begin{equation}
+\omega = \frac{m_v}{m_a} = \frac{M_v}{M_a} \frac{x_v}{1 - x_v}
+\label{eq:omega}
+\end{equation}
+
+\subsection{Umidade relativa}
+A umidade relativa é definida como a relação entre a fração molar de vapor e a fração molar de vapor na saturação na temperatura da mistura:
+\begin{equation}
+\phi = \left. \frac{x_v}{x_{vs}}\right|_{P,T}
+\label{eq:relhum}
+\end{equation}
+
+
+\subsection{Temperatura de ponto de orvalho}
+Quando o ar úmido é resfriado a pressão constante, chegará um momento quando vapor atingirá a saturação e começará a condensar. A temperatura na qual o vapor chega à condição de saturação é a temperatura a ponto de orvalho $T_d$. No caso de um gás real, esta temperatura vale:
+\begin{equation}
+x_v = x_{vs}(T_d, P) = f(T_d, P) \cdot \frac{P_{sv}(T_d) }{P}
+\label{eq:dewpoint}
+\end{equation}
+Quando utilizando a temperatura de ponto de orvalho, é importante tomar cuidado se a a fração molar de vapor for nula pois neste caso, pode-se abaixar a temperatura do ar sem que nunca se chegue a uma condição de saturação do vapor (que não existe).
+
+\subsection{Temperatura de saturação adiabática e temperatura de bulbo úmido}
+A temperatura de bulbo úmido é a maneira mais comum de se estimar a quantidade de vapor no ar úmido. Isso porque é o psicrômetro mais fácil de se construir. Na realidade, a  temperatura de bulbo úmido é uma estimativa da temperatura de saturação adiabática. A figura \ref{fig:satad} mostra um diagrama esquemático de um saturador adiabático.
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.9\textwidth]{satad.pdf}
+\end{center}
+\caption{Diagrama esquemático de um Saturador adiabático. O ar na saída deve estar saturado à temperatura B que é a temperatura de saturação adiabática. w é o teor de umidade na entrada e w' é o teor de umidade de saturação na saída}
+\label{fig:satad}
+\end{figure}
+
+A Para resolver o problema da saturação adiabática deve-se recorrer a um balanço de energia:
+\begin{equation}
+(1 + \omega)h(T,P,\omega) + (\omega' - \omega) h_l(B,P) = (1 + \omega')h(B,P,\omega')
+\label{eq:satad}
+\end{equation}
+Nesta equação, $h$ é a entalpia do ar úmido e $h_l$ é a temperatura do líquido saturado ou gelo saturado. No caso de gás perfeito, $H = H_a + H_v$, desta maneira, equação pode ser simplificada:
+\begin{equation}
+h_a(T) + \omega h_v(T) + (\omega' - \omega) h_l(B) = h_a(B) + \omega'h_v(B)
+\label{eq:satad2}
+\end{equation}
+No caso da equação \ref{eq:satad2}, conhecido $B$, pode-se facilmente calcular $\omega$. Caso seja conhecido $\omega$ para se determinar $B$ é necessário iterar. No caso de gás real (equação \ref{eq:satad}) é necessário iterar nas duas situações.
+
+
+\section{Documentação da biblioteca \texttt{libpsychro}}
+Nesta seção a biblioteca \texttt{libpsychro} é detalhada. Esta biblioteca foi desenvolvida em C++ para permitir que fosse expandida facilmente. A biblioteca é construída em cima da classe \texttt{Psychro}. Esta classe não implementa nada mas fornece as interfaces que qualquer classe que faça parte desta biblioteca deve ter. 
+
+Para se usar a biblioteca é necessário que um modelo tenha sido implementado. Até o momento, foram implementados um modelo utilizando gás perfeito e relações lineares para as entalpias, um modelo de gás real utilizando as equações de \cite{ashrae.1996}(neste trabalho denominado ASHRAE e o modelo segundo as equações \cite{giacomo.1982} que é baseado no modelo da ASHRAE pois o modelo é incompleto (modelo denominado, neste trabalho, Giacomo).
+
+A seguir são explicadas as interfaces da biblioteca:
+\begin{itemize}
+\item[\texttt{set}] Função básica para entrada de dados. Nesta primeira versão, apenas uma interface para a especificação da mistura ar-vapor foi implementada. É necessário, sempre, entrar com a temperatura, a pressão e um parâmetro que caracteriza a umidade. Este parâmetro pode ser: a umidade relativa ('R'), o teor de umidade ('W'), a fração molar de vapor ('X'), a temperatura de ponto de orvalho ('D') ou a temperatura de bulbo úmido ('B').
+\item[\texttt{VOLUME}] Cálculo do volume específico em $m^3/kg$ de ar seco. Depende da temperatura e pressão.
+\item[\texttt{DENSITY}] Cálculo da massa especifica em $kg/m^3$. Depende da temperatura e pressão.
+\item[\texttt{ENTHALPY}] Calcula a entalpia do ar úmido em $J/kg$ de ar seco. Depende da temperatura e pressão.
+\item[\texttt{RELHUM}] Calcula a umidade relativa da mistura. Depende da temperatura e pressão
+\item[\texttt{DEWPOINT}] Calcula a temperatura de ponto de orvalho em $K$. Depende da temperatura e pressão.
+\item[\texttt{WETBULB}] Calcula a temperatura de bulbo úmido em $K$. Depende da temperatura e pressão.
+\item[\texttt{HUMRAT}] Calcula o teor de umidade.
+\item[\texttt{MOLFRAC}] Calcula a fração molar de vapor.
+\end{itemize}
+
+Utilizando a ferramenta \texttt{Doxygen} pode-se construir a documentação da biblioteca em html. Falta ainda alguns exemplos de aplicação da biblioteca \ldots.
+
+
+\section{Manual da interface excel da biblioteca \texttt{libpsychro}}
+Foi desenvolvida um interface excel para a biblioteca \psychro. Esta interface permite, numa planilha excel calcular as propriedades do ar úmido utilizando a metodologia da ASHRAE e de Giacomo. Os nomes das funções são idênticos exceto que nas funções que utilizam o método de Giacomo, existe uma extensão \texttt{\_iso}. Por exemplo para calcular a densidade:
+\begin{itemize}
+\item{ASHRAE:} \texttt{density(\ldots)}
+\item{Giacomo:} \texttt{density\_iso(\ldots)}
+\end{itemize}
+Observe que por conveniência, as unidades utilizadas são mais próximas das usuais: Temperatura $^oC$, Pressão $kPa$, energia $kJ$. A seguir as funções serão brevemente descritas. Para caracterizar qual o parâmetro de umidade utilizado é utilizado um caracter. No excel o caracter deve estar entre aspas duplas (''B'' por exemplo).
+\begin{itemize}
+\item[W] Teor de umidade.
+\item[X] Fração molar.
+\item[R] Umidade relativa.
+\item[D] Temperatura de ponto de orvalho.
+\item[B] Temperatura de bulbo úmido
+\end{itemize}
+Estes caracteres são utilizados para especificar como a umidade é entrada.
+
+
+\subsubsection{\texttt{density(ch, T, umidade, P)}} Esta função calcula a massa específica do ar úmido em $kg/m^3$. \texttt{ch} pode ser um dos caracteres já mostrados, \texttt{T} é a temperatura em $^oC$, \text{umidade} depende de \texttt{ch}. Se for \texttt{B}, \texttt{umidade} é a temperatura de ponto de orvalho em  $^oC$. Se for \texttt{D} é o ponto de orvalho em em $^oC$ se for \texttt{W} o teor de umidade, se for  \texttt{X} a fração molar de vapor e se for \texttt{R} é a umidade relativa.
+
+\subsubsection{\texttt{volume(ch, T, umidade, P)}} Esta função calcula o volume específico em $m^3/kg$ de ar seco.
+
+\subsubsection{\texttt{enthalpy(ch, T, umidade, P)}} Esta função calcula a entalpia em $kJ/kg$ de ar seco.
+
+\subsubsection{\texttt{relhum(ch, T, umidade, P)}}  Esta função calcula a umidade relativa.
+
+\subsubsection{\texttt{dewpoint(ch, T, umidade, P)}} Esta função calcula a temperatura de ponto de orvalho em $^oC$.
+
+\subsubsection{\texttt{wetbulb(ch, T, umidade, P)}} Esta função calcula a temperatura de bulbo úmido em $^oC$.
+
+\subsubsection{\texttt{Z(ch, T, umidade, P)}} Esta função calcula a compressibilidade do ar úmido.
+
+\subsubsection{\texttt{efactor(T, P)}} Esta função calcula o \emph{enhancement factor}.
+
+\subsubsection{\texttt{Psv(T)}} Esta função calcula a pressão de saturação de vapor em $kPa$.
+
+\subsubsection{\texttt{Tsv(P)}} Esta função calcula a temperatura de saturação de vapor em $^oC$
+
+
+
+Observar que todas as funções, se estiverem com o sufixo \texttt{\_iso} serão calculadas utilizando o método de Giacomo\cite{giacomo.1982}. Os valores são muito próximos. Na densidade as diferenças são inferiores a $2\times 10^{-5} kg/m^3$. 
+
+Faixas de aplicação:
+
+\begin{itemize}
+\item[Giacomo] $15$ a $27\:^oC$ e $60$ a $110\:kPa$
+\item[ASHRAE] $-100$ a $200\:^oC$ e $0$ a $5000\:kPa$
+\end{itemize}
+
+
+\subsection{Uso da interface}
+
+A interface é muito simples de utilizar. Muito cuidado deve ser tomado ao abrir a planilha para que a biblioteca seja encontrada (uma DLL). \emph{Não clicar diretamente no arquivo excel. Utilizar os menus do excel}.
+
+\noindent Exemplo: calcular a massa especifica do ar a $20\:^oC$, pressão de $93\:kPa$ e temperatura de ponto de orvalho de $15\:^oC$:
+
+digitar na célula da planilha: \texttt{=density(''R''; 20; 15; 93)}. Neste caso, é possível utilizar o método de Giacomo; basta mudar \texttt{densidade} para \texttt{densidade\_iso}.
+
+
+\section{Limitações e melhorias futuras}
+A \psychro~ ainda está em versão beta. Não foi testada o suficiente e outras melhorias são possíveis. Faltam ainda propriedades termodinâmicas como a entropia por exemplo. Não foram implementadas propriedades de transporte e este documento deve ser melhorado. Um pequeno tutorial de como compilar, instalar e utilizar a biblioteca é importante.
+
+A interface em R ainda precisa ser terminada (falta implementar o NAMESPACE e a documentação). Talvez fosse interessante interfaces em outras linguagens como python, fortran, octave ou scilab. A possibilidade de entrar com os dados de maneira mais flexível também pode ajudar bastante em algumas aplicações. 
+
+Quaisquer críticas ou comentários são bem vindos.
+
+
+
+
+
+
+\bibliography{pjbib}
+
+\bibliographystyle{plain}
+\end{document}
+
+

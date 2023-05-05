@@ -1,0 +1,7 @@
+*~
+report/*.aux
+report/*.bbl
+report/*.log
+report/*.blg
+report/*.toc
+

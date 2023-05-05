@@ -1,0 +1,51 @@
+EXPORTS
+    DllMain = DllMain@12 @1
+    DllMain@12 @2
+    iso_Z = iso_Z@20 @3
+    iso_Z@20 @4
+    iso_density = iso_density@20 @5
+    iso_density@20 @6
+    iso_dewpoint = iso_dewpoint@20 @7
+    iso_dewpoint@20 @8
+    iso_efactor = iso_efactor@12 @9
+    iso_efactor@12 @10
+    iso_enthalpy = iso_enthalpy@20 @11
+    iso_enthalpy@20 @12
+    iso_humrat = iso_humrat@20 @13
+    iso_humrat@20 @14
+    iso_molfrac = iso_molfrac@20 @15
+    iso_molfrac@20 @16
+    iso_psat = iso_psat@8 @17
+    iso_psat@8 @18
+    iso_relhum = iso_relhum@20 @19
+    iso_relhum@20 @20
+    iso_tsat = iso_tsat@8 @21
+    iso_tsat@8 @22
+    iso_volume = iso_volume@20 @23
+    iso_volume@20 @24
+    iso_wetbulb = iso_wetbulb@20 @25
+    iso_wetbulb@20 @26
+    psychro_Z = psychro_Z@20 @27
+    psychro_Z@20 @28
+    psychro_density = psychro_density@20 @29
+    psychro_density@20 @30
+    psychro_dewpoint = psychro_dewpoint@20 @31
+    psychro_dewpoint@20 @32
+    psychro_efactor = psychro_efactor@12 @33
+    psychro_efactor@12 @34
+    psychro_enthalpy = psychro_enthalpy@20 @35
+    psychro_enthalpy@20 @36
+    psychro_humrat = psychro_humrat@20 @37
+    psychro_humrat@20 @38
+    psychro_molfrac = psychro_molfrac@20 @39
+    psychro_molfrac@20 @40
+    psychro_psat = psychro_psat@8 @41
+    psychro_psat@8 @42
+    psychro_relhum = psychro_relhum@20 @43
+    psychro_relhum@20 @44
+    psychro_tsat = psychro_tsat@8 @45
+    psychro_tsat@8 @46
+    psychro_volume = psychro_volume@20 @47
+    psychro_volume@20 @48
+    psychro_wetbulb = psychro_wetbulb@20 @49
+    psychro_wetbulb@20 @50
