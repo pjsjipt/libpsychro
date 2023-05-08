@@ -5,6 +5,30 @@
 #include "Giacomo.h"
 //#include <cstdio>
 
+
+#ifdef _WIN32
+
+  /* You should define ADD_EXPORTS *only* when building the DLL. */
+  #ifdef ADD_EXPORTS
+    #define PSYCHROAPI __declspec(dllexport)
+  #else
+    #define PSYCHROAPI __declspec(dllimport)
+  #endif
+
+  /* Define calling convention in one place, for convenience. */
+  #define PSYCHROCALL __stdcall
+
+#else /* _WIN32 not defined. */
+
+  /* Define with no value on non-Windows OSes. */
+  #define PSYCHROAPI
+  #define PSYCHROCALL
+
+#endif
+
+
+
+
 using namespace std;
 Ashrae g;
 Giacomo iso;
@@ -13,7 +37,7 @@ const int R=0, B=1, D=2, W=3, X=4;
 char cc[]={'R', 'B', 'D', 'W', 'X'};
 extern "C" {
 
-  __declspec(dllexport) void __stdcall psychro_density(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL psychro_density(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     double soma;
@@ -27,7 +51,7 @@ extern "C" {
   }
   
 
-  __declspec(dllexport) void __stdcall psychro_volume(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL psychro_volume(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -48,7 +72,7 @@ extern "C" {
   }
 
 
-  __declspec(dllexport) void __stdcall psychro_enthalpy(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL psychro_enthalpy(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -61,7 +85,7 @@ extern "C" {
 	
   }
 
-  __declspec(dllexport) void __stdcall psychro_wetbulb(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL psychro_wetbulb(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -74,7 +98,7 @@ extern "C" {
 	
   }
 
-  __declspec(dllexport) void __stdcall psychro_dewpoint(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL psychro_dewpoint(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -88,7 +112,7 @@ extern "C" {
   }
   
 
-  __declspec(dllexport) void __stdcall psychro_relhum(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL psychro_relhum(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -102,7 +126,7 @@ extern "C" {
   }
 
 
-  __declspec(dllexport) void __stdcall psychro_humrat(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL psychro_humrat(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -114,7 +138,7 @@ extern "C" {
   }
 
 
-  __declspec(dllexport) void __stdcall psychro_molfrac(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL psychro_molfrac(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -125,7 +149,7 @@ extern "C" {
     *r = g.MOLFRAC();
   }
   
-  __declspec(dllexport) void __stdcall psychro_Z(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL psychro_Z(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -136,19 +160,19 @@ extern "C" {
     *r = g.Z(*t+273.15, *p * 1000.0, g.XV);
   }
   
-  __declspec(dllexport) void __stdcall psychro_psat(double *t, double *r)
+  PSYCHROAPI void PSYCHROCALL psychro_psat(double *t, double *r)
   {
     *r = g.Pws(*t + 273.15)/1000.0;
   }
   
-  __declspec(dllexport) void __stdcall psychro_tsat(double *p, double *r)
+  PSYCHROAPI void PSYCHROCALL psychro_tsat(double *p, double *r)
   {
     *r = g.Tws(*p * 1000.0) - 273.15;
   }
 
   
 
-  __declspec(dllexport) void __stdcall psychro_efactor(double *t, double *p, double *r)
+  PSYCHROAPI void PSYCHROCALL psychro_efactor(double *t, double *p, double *r)
   {
     *r = g.eFactor(*t+273.15, *p * 1000.0);
   }
@@ -158,7 +182,7 @@ extern "C" {
 
 
 
-  __declspec(dllexport) void __stdcall iso_density(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL iso_density(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     double soma;
@@ -172,7 +196,7 @@ extern "C" {
   }
   
 
-  __declspec(dllexport) void __stdcall iso_volume(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL iso_volume(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -193,7 +217,7 @@ extern "C" {
   }
 
 
-  __declspec(dllexport) void __stdcall iso_enthalpy(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL iso_enthalpy(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -206,7 +230,7 @@ extern "C" {
 	
   }
 
-  __declspec(dllexport) void __stdcall iso_wetbulb(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL iso_wetbulb(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -219,7 +243,7 @@ extern "C" {
 	
   }
 
-  __declspec(dllexport) void __stdcall iso_dewpoint(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL iso_dewpoint(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -233,7 +257,7 @@ extern "C" {
   }
   
 
-  __declspec(dllexport) void __stdcall iso_relhum(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL iso_relhum(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -247,7 +271,7 @@ extern "C" {
   }
 
 
-  __declspec(dllexport) void __stdcall iso_humrat(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL iso_humrat(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -259,7 +283,7 @@ extern "C" {
   }
 
 
-  __declspec(dllexport) void __stdcall iso_molfrac(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL iso_molfrac(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -270,7 +294,7 @@ extern "C" {
     *r = iso.MOLFRAC();
   }
   
-  __declspec(dllexport) void __stdcall iso_Z(int *ch, double *t, 
+  PSYCHROAPI void PSYCHROCALL iso_Z(int *ch, double *t, 
 		       double *umidade, double *p, double *r)
   {
     char c = cc[*ch];
@@ -281,19 +305,19 @@ extern "C" {
     *r = iso.Z(*t+273.15, *p * 1000.0, iso.XV);
   }
   
-  __declspec(dllexport) void __stdcall iso_psat(double *t, double *r)
+  PSYCHROAPI void PSYCHROCALL iso_psat(double *t, double *r)
   {
     *r = iso.Pws(*t + 273.15)/1000.0;
   }
   
-  __declspec(dllexport) void __stdcall iso_tsat(double *p, double *r)
+  PSYCHROAPI void PSYCHROCALL iso_tsat(double *p, double *r)
   {
     *r = iso.Tws(*p * 1000.0) - 273.15;
   }
 
   
 
-  __declspec(dllexport) void __stdcall iso_efactor(double *t, double *p, double *r)
+  PSYCHROAPI void PSYCHROCALL iso_efactor(double *t, double *p, double *r)
   {
     *r = iso.eFactor(*t+273.15, *p * 1000.0);
   }
