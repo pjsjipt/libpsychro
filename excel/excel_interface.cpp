@@ -2,18 +2,18 @@
 
 
 //#include <windows.h>
-#include "Giacomo.h"
+#include <psychro/psychro.h>
 //#include <cstdio>
 
 
 #ifdef _WIN32
 
   /* You should define ADD_EXPORTS *only* when building the DLL. */
-  #ifdef ADD_EXPORTS
+//  #ifdef ADD_EXPORTS
     #define PSYCHROAPI __declspec(dllexport)
-  #else
-    #define PSYCHROAPI __declspec(dllimport)
-  #endif
+//  #else
+//    #define PSYCHROAPI __declspec(dllimport)
+//  #endif
 
   /* Define calling convention in one place, for convenience. */
   #define PSYCHROCALL __stdcall
